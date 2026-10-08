@@ -168,7 +168,7 @@ function checkOrigin(req) {
 }
 function query(req) { return new URL(req.url || '/', 'http://localhost').searchParams; }
 async function login(req, res, body) {
-  const code = process.env.ADMIN_CODE;
+  const code = process.env.ADMIN_CODE?.trim();
   if (!code) throw error(503, 'Admin access has not been configured on the server.');
   const ip = req.headers?.['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
   const key = `p57:admin:attempts:${hash(ip)}`;
