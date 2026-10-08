@@ -91,6 +91,18 @@ test('Protected admin, pre-signing, bulk invite, recipient submission and live s
   const mailCount=mails.length;
   assert.equal((await call(submit,'/api/submit','POST',{document:incoming,invitationToken:token},false)).body.alreadySubmitted,true);
   assert.equal(mails.length,mailCount);
+  // Submitted PDFs can be viewed inline or downloaded from the admin center.
+  const inline=await call(admin,`/api/admin?action=pdf&id=${assigned.id}&inline=1`);
+  assert.equal(inline.status,200);assert.match(inline.headers['Content-Disposition'],/^inline;/);assert.equal(inline.body.subarray(0,4).toString(),'%PDF');
+  assert.match((await call(admin,`/api/admin?action=pdf&id=${assigned.id}`)).headers['Content-Disposition'],/^attachment;/);
+  // Signature presets are saved, validated and returned for prefilling new declarations.
+  assert.deepEqual((await call(admin,'/api/admin?action=presets')).body.presets,{handover:null,admin:null});
+  assert.equal((await call(admin,'/api/admin?action=presets','POST',{presets:{handover:{name:'',sig:sig('X').sig}}})).status,422);
+  assert.equal((await call(admin,'/api/admin?action=presets','POST',{presets:{handover:{name:'Bad',sig:{method:'draw',image:'data:text/html,x'}}}})).status,422);
+  const preset=await call(admin,'/api/admin?action=presets','POST',{presets:{handover:{name:'Test Handover',sig:sig('Test Handover').sig},admin:{name:'Test Ops',sig:null}}});
+  assert.equal(preset.status,200);assert.equal(preset.body.presets.handover.sig.image,image);assert.equal(preset.body.presets.admin.name,'Test Ops');
+  assert.equal((await call(admin,'/api/admin?action=presets')).body.presets.handover.name,'Test Handover');
+  assert.equal((await call(admin,'/api/admin?action=presets','GET',undefined,false)).status,401);
   const publicForgery=structuredClone(document);publicForgery.fields={...publicForgery.fields,refNo:'PUBLIC-TEST',employeeName:'Test',employeeId:'TEST',declName:'Test',designation:'Test',department:'Test'};publicForgery.sigs.employee=sig('Test');
   assert.equal((await call(submit,'/api/submit','POST',{document:publicForgery},false)).status,403);
   // A notification failure must not erase the signed submission.

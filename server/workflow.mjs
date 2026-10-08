@@ -6,6 +6,7 @@ import { buildPdf } from '../shared/pdf-engine.js';
 import { SIG_META } from '../shared/document-meta.js';
 
 const DOCS = 'p57:asset-declaration:documents';
+const PRESETS = 'p57:asset-declaration:signature-presets';
 const APP_URL = process.env.APP_URL || 'https://assets-signature.vercel.app';
 const logo = `data:image/png;base64,${fs.readFileSync(new URL('../src/assets/physique57-logo.png', import.meta.url)).toString('base64')}`;
 const directory = JSON.parse(fs.readFileSync(new URL('../src/data/employees.json', import.meta.url), 'utf8'));
@@ -216,6 +217,25 @@ async function saveAdminDocument(body) {
     return publicDoc(item);
   });
 }
+// Saved handover and admin signatures that prefill every new declaration and bulk template.
+async function readPresets() {
+  const value = await redisCommand(['GET', PRESETS]);
+  const stored = value ? JSON.parse(value) : {};
+  return { handover: stored.handover || null, admin: stored.admin || null };
+}
+async function savePresets(input) {
+  if (!input || typeof input !== 'object') throw error(422, 'Signature presets are required.');
+  const presets = {};
+  for (const key of ['handover', 'admin']) {
+    const value = input[key];
+    if (!value) { presets[key] = null; continue; }
+    const name = text(value.name);
+    if (!name) throw error(422, 'Each signature preset needs the signatory’s printed name.');
+    presets[key] = { name, sig: value.sig ? signature({ sig: value.sig, name }).sig : null, updatedAt: now() };
+  }
+  await redisCommand(['SET', PRESETS, JSON.stringify(presets)]);
+  return presets;
+}
 async function inviteOne(template, recipient, batchId) {
   const employee = directory.find(e => e.id === recipient.employeeId);
   if (!employee) throw error(422, 'Choose an employee from the directory.');
@@ -257,13 +277,15 @@ export async function handleAdmin(req, res) {
     if (action === 'document' && req.method === 'GET') return sendJson(res, 200, { ok: true, item: publicDoc(await readDoc(params.get('id'))) });
     if (action === 'pdf' && req.method === 'GET') {
       const item = await readDoc(params.get('id')); const pdf = await buildPdf(item.document, item.document.fields.refNo, logo);
-      res.writeHead(200, { 'Content-Type': 'application/pdf', 'Cache-Control': 'no-store', 'Content-Disposition': `attachment; filename="${pdf.filename}"` });
+      res.writeHead(200, { 'Content-Type': 'application/pdf', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Content-Disposition': `${params.get('inline') === '1' ? 'inline' : 'attachment'}; filename="${pdf.filename}"` });
       return res.end(Buffer.from(pdf.base64, 'base64'));
     }
     if (action === 'sheet' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="Physique57_Asset_Declarations_Running_Sheet.xlsx"' });
       return res.end(buildSheet(await readLedger()));
     }
+    if (action === 'presets' && req.method === 'GET') return sendJson(res, 200, { ok: true, presets: await readPresets() });
+    if (action === 'presets' && req.method === 'POST') return sendJson(res, 200, { ok: true, presets: await savePresets(body.presets) });
     if (action === 'save' && req.method === 'POST') return sendJson(res, 200, { ok: true, item: await saveAdminDocument(body) });
     if (action === 'invite' && req.method === 'POST') {
       const template = await readDoc(body.id);
