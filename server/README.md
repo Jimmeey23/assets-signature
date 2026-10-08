@@ -64,3 +64,28 @@ signatures to prevent attributing a previous signature to another employee.
 
 Mailtrap success means the provider accepted the email; recipient inbox
 delivery is tracked through Mailtrap.
+
+## Vercel
+
+The root `api/submit.js` and `api/health.js` files deploy as Node.js Functions
+alongside the Vite frontend. Keep the app endpoint as `/api/submit`.
+
+In the assets-signature project, add `MAILTRAP_API_TOKEN` and `MAILTRAP_FROM`
+to the Production environment (and Preview if needed), then redeploy. A
+local `server/.env` is ignored and is not uploaded to Vercel.
+
+Vercel functions do not use local disk for the submissions ledger. To retain
+a shared running Excel sheet across employees, configure
+`UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` (the equivalent
+`KV_REST_API_URL` / `KV_REST_API_TOKEN` names are also accepted). Records
+are stored individually in a Redis hash so concurrent submissions do not
+overwrite one another. An email's sheet reflects the ledger available when
+that submission was processed.
+
+Without Redis, email delivery still works and includes the signed PDF and
+a sheet containing only that submission. The confirmation distinguishes
+this from a shared running sheet. The local server still uses its disk ledger.
+
+The frontend checks the JSON submission size before sending it to stay below
+Vercel's function request limit. Mailtrap provider acceptance does not confirm
+inbox delivery.

@@ -7,3 +7,6 @@ server/.env
 server/.env.*
 !server/.env.example
 server/data/
+.vercel/
+.vercel
+.env*.local

@@ -35,27 +35,32 @@ export interface SubmitResult {
   sentTo: string;
   rowNumber: number;
   totalSubmissions: number;
+  ledgerMode?: "local" | "shared" | "submission";
 }
 
 export async function submitSubmission(record: SubmissionRecord, pdf: BuiltPdf): Promise<SubmitResult> {
   const url = getEndpoint();
+  const body = JSON.stringify({ record, pdf: { filename: pdf.filename, base64: pdf.base64 } });
+  if (new Blob([body]).size > 4_000_000) {
+    throw new SubmitError("The signed PDF is too large for email submission. Please download the PDF and send it manually.");
+  }
   let res: Response;
   try {
     res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ record, pdf: { filename: pdf.filename, base64: pdf.base64 } }),
+      body,
     });
   } catch {
     throw new SubmitError(
-      `Couldn't reach the mail server at ${url}. Start \`npm run server\`, or update the server address in Settings.`,
+      `Couldn't reach the mail server at ${url}. Check the deployment or update the server address in Settings.`,
     );
   }
 
   const type = res.headers.get("content-type") ?? "";
   if (!type.includes("application/json")) {
     throw new SubmitError(
-      `The submission endpoint isn't running at ${url} (HTTP ${res.status}). Start the server (\`npm start\`) or check its address in Settings.`,
+      `The submission endpoint isn't running at ${url} (HTTP ${res.status}). Redeploy the project with its API routes included, or check its address in Settings.`,
     );
   }
   const data = await res.json();
@@ -67,7 +72,8 @@ export interface Health {
   ok: boolean;
   apiConfigured?: boolean;
   recipient?: string;
-  submissions?: number;
+  submissions?: number | null;
+  ledgerMode?: "local" | "shared" | "submission";
   from?: string | null;
   error?: string;
 }

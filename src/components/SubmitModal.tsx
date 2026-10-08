@@ -61,7 +61,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
       const built = await buildPdf(state, ref);
       setPdf(built);
       const record = toRecord(state, ref);
-      setStep("Emailing PDF and running sheet");
+      setStep("Emailing PDF and submission sheet");
       const r = await submitSubmission(record, built);
       saveToLedger(record);
       setResult(r);
@@ -102,7 +102,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
           </span>
           <h2 className="mt-4 text-lg font-semibold text-neutral-900">Submission sent</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
-            The signed PDF and the running submissions sheet were emailed to
+            The signed PDF and {result.ledgerMode === "submission" ? "submission details sheet" : "running submissions sheet"} were emailed to
             <br />
             <span className="font-medium text-neutral-900">{result.sentTo}</span>
           </p>
@@ -112,9 +112,9 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
               <dd className="font-medium text-neutral-900">{result.ref}</dd>
             </div>
             <div className="flex justify-between py-2.5">
-              <dt className="text-neutral-400">Row in running sheet</dt>
+              <dt className="text-neutral-400">{result.ledgerMode === "submission" ? "Submission details" : "Row in running sheet"}</dt>
               <dd className="font-medium text-neutral-900">
-                #{result.rowNumber} of {result.totalSubmissions}
+                {result.ledgerMode === "submission" ? "Included in email" : `#${result.rowNumber} of ${result.totalSubmissions}`}
               </dd>
             </div>
           </dl>
@@ -169,7 +169,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">Submit</p>
         <h2 className="mt-0.5 text-lg font-semibold text-neutral-900">Review before sending</h2>
         <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
-          A signed PDF and the updated running submissions sheet will be emailed to <span className="font-medium text-neutral-900">{RECIPIENT}</span>.
+          A signed PDF and submission sheet will be emailed to <span className="font-medium text-neutral-900">{RECIPIENT}</span>.
         </p>
       </div>
 

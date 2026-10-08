@@ -59,8 +59,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
           >
             {health.ok
               ? health.apiConfigured
-                ? `Mail server configured · ${health.submissions ?? 0} submission(s) logged.`
-                : "Server is running, but the Mailtrap API token / sender address aren't set yet (see server/.env)."
+                ? `Mail server configured${health.ledgerMode === "submission" ? " · PDF and submission details emailed" : ` · ${health.submissions ?? 0} submission(s) logged`}.`
+                : "Mailtrap isn't configured yet. Add MAILTRAP_API_TOKEN and MAILTRAP_FROM in Vercel Environment Variables, then redeploy."
               : health.error}
           </p>
         )}
