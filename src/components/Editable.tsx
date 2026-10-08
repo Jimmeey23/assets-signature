@@ -6,10 +6,11 @@ interface Props {
   onChange: (v: string) => void;
   className?: string;
   singleLine?: boolean;
+  readOnly?: boolean;
 }
 
 /** Uncontrolled contentEditable text – keeps the caret stable while typing and commits on blur. */
-export function Editable({ value, onChange, className, singleLine }: Props) {
+export function Editable({ value, onChange, className, singleLine, readOnly }: Props) {
   const ref = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
@@ -20,10 +21,10 @@ export function Editable({ value, onChange, className, singleLine }: Props) {
   return (
     <span
       ref={ref}
-      contentEditable
+      contentEditable={!readOnly}
       suppressContentEditableWarning
       spellCheck
-      onBlur={(e) => onChange(e.currentTarget.innerText.replace(/\n+$/, ""))}
+      onBlur={(e) => !readOnly && onChange(e.currentTarget.innerText.replace(/\n+$/, ""))}
       onKeyDown={(e) => {
         if (singleLine && e.key === "Enter") {
           e.preventDefault();

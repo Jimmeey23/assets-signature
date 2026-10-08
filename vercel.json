@@ -4,6 +4,9 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/*.js": { "maxDuration": 60 }
+    "api/*.js": {
+      "maxDuration": 300,
+      "includeFiles": "{src/assets/physique57-logo.png,src/data/employees.json}"
+    }
   }
 }

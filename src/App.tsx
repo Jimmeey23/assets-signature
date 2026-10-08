@@ -99,12 +99,13 @@ function RemoveX({ onClick, title, className }: { onClick: () => void; title: st
   );
 }
 
-function SignatureBox({ block, onOpen, onClear }: { block: SigBlock; onOpen: () => void; onClear: () => void }) {
+function SignatureBox({ block, onOpen, onClear, locked }: { block: SigBlock; onOpen: () => void; onClear: () => void; locked?: boolean }) {
   const { sig } = block;
   return (
     <div className="group/sig relative">
       <button
         type="button"
+        disabled={locked}
         onClick={onOpen}
         className="flex h-[60px] w-full items-end justify-start border-b border-neutral-800 pb-1 transition hover:bg-brand/5 print:hover:bg-transparent"
       >
@@ -116,17 +117,18 @@ function SignatureBox({ block, onOpen, onClear }: { block: SigBlock; onOpen: () 
               <path d="M12 20h9" />
               <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
             </svg>
-            Click to sign
+            {locked ? "Admin signature required" : "Click to sign"}
           </span>
         )}
       </button>
-      {sig && <RemoveX onClick={onClear} title="Remove signature" className="absolute right-0 top-0 bg-white opacity-0 group-hover/sig:opacity-100" />}
+      {sig && !locked && <RemoveX onClick={onClear} title="Remove signature" className="absolute right-0 top-0 bg-white opacity-0 group-hover/sig:opacity-100" />}
     </div>
   );
 }
 
-export default function App() {
-  const [doc, setDoc] = useState<DocState>(loadDoc);
+export default function App({ initialDocument, invitationToken, alreadySubmitted = false }: { initialDocument?: DocState; invitationToken?: string; alreadySubmitted?: boolean }) {
+  const readonly = Boolean(invitationToken);
+  const [doc, setDoc] = useState<DocState>(() => initialDocument || loadDoc());
   const [resetKey, setResetKey] = useState(0);
   const [signing, setSigning] = useState<SigKey | null>(null);
   const [scale, setScale] = useState(1);
@@ -134,7 +136,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
 
-  useEffect(() => saveDoc(doc), [doc]);
+  useEffect(() => { if (!invitationToken) saveDoc(doc); }, [doc, invitationToken]);
 
   useEffect(() => {
     const fit = () => setScale(Math.min(1, (window.innerWidth - 16) / 794));
@@ -143,16 +145,17 @@ export default function App() {
     return () => window.removeEventListener("resize", fit);
   }, []);
 
-  const patch = (p: Partial<DocState>) => setDoc((d) => ({ ...d, ...p }));
+  const patch = (p: Partial<DocState>) => !readonly && setDoc((d) => ({ ...d, ...p }));
 
   const setField = (k: keyof Fields, v: string) =>
-    setDoc((d) => {
+    !readonly && setDoc((d) => {
       const fields = { ...d.fields, [k]: v };
       if (k === "employeeName" && d.fields.declName === d.fields.employeeName) fields.declName = v;
       return { ...d, fields };
     });
 
   const selectEmployee = (id: string) => {
+    if (readonly) return;
     const employee = employees.find((e) => e.id === id);
     setDoc((d) => ({
       ...d,
@@ -169,10 +172,10 @@ export default function App() {
   };
 
   const updateAsset = (id: number, k: keyof Asset, v: string) =>
-    setDoc((d) => ({ ...d, assets: d.assets.map((a) => (a.id === id ? { ...a, [k]: v } : a)) }));
+    !readonly && setDoc((d) => ({ ...d, assets: d.assets.map((a) => (a.id === id ? { ...a, [k]: v } : a)) }));
 
   const setSigBlock = (key: SigKey, p: Partial<SigBlock>) =>
-    setDoc((d) => ({ ...d, sigs: { ...d.sigs, [key]: { ...d.sigs[key], ...p } } }));
+    key === "employee" && !alreadySubmitted && setDoc((d) => ({ ...d, sigs: { ...d.sigs, [key]: { ...d.sigs[key], ...p } } }));
 
   const applySignature = (sig: Sig) => {
     if (!signing) return;
@@ -236,7 +239,7 @@ export default function App() {
               </span>
               {signedCount} of {SIG_META.length} signed
             </div>
-            <button
+            {!readonly && <button
               onClick={() => setSettingsOpen(true)}
               title="Email settings"
               className="rounded-md p-2 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-800"
@@ -246,9 +249,9 @@ export default function App() {
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
               </svg>
             </button>
-            <button onClick={reset} className="rounded-md px-2.5 py-2 text-xs font-semibold text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800">
-              Reset
-            </button>
+            }
+            {!readonly && <a href="#/admin" className="rounded-md px-2.5 py-2 text-xs font-semibold text-neutral-500 hover:bg-neutral-100">Admin center</a>}
+            {!readonly && <button onClick={reset} className="rounded-md px-2.5 py-2 text-xs font-semibold text-neutral-500 hover:bg-neutral-100">Reset</button>}
             <button
               onClick={downloadPdf}
               disabled={pdfBusy}
@@ -257,6 +260,7 @@ export default function App() {
               {pdfBusy ? "Preparing…" : "Download PDF"}
             </button>
             <button
+              disabled={alreadySubmitted}
               onClick={() => setSubmitOpen(true)}
               className="rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black"
             >
@@ -273,7 +277,7 @@ export default function App() {
         style={{ "--z": scale } as CSSProperties}
       >
         <p className="print:hidden text-center text-[11px] text-neutral-400">
-          Click any text to edit · fill in the fields · click a signature line to sign · then submit
+          {readonly ? alreadySubmitted ? "Your declaration has been submitted. You can download your copy." : "Review your assigned declaration, add your employee signature, then submit." : "Fill in your details and employee signature. Admin signatures are managed in the protected admin center."}
         </p>
 
         {/* PAGE 1 */}
@@ -283,7 +287,7 @@ export default function App() {
             <Logo height={68} />
             <div className="w-44 pt-1">
               <Field label="Reference No.">
-                <input
+                <input readOnly={readonly}
                   className={cn(lineInput, "text-right text-[12px] font-medium tracking-wide")}
                   value={f.refNo}
                   onChange={(e) => setField("refNo", e.target.value)}
@@ -303,7 +307,7 @@ export default function App() {
           {/* Employee details */}
           <div className="grid grid-cols-2 gap-x-10 gap-y-5">
             <Field label="Employee Name">
-              <select aria-label="Employee Name" className={`${lineInput} print:appearance-none`} value={employees.some((e) => e.id === f.employeeId && e.name === f.employeeName) ? f.employeeId : ""} onChange={(e) => selectEmployee(e.target.value)}>
+              <select disabled={readonly} aria-label="Employee Name" className={`${lineInput} print:appearance-none`} value={employees.some((e) => e.id === f.employeeId && e.name === f.employeeName) ? f.employeeId : ""} onChange={(e) => selectEmployee(e.target.value)}>
                 <option value="">{f.employeeName || "Select employee"}</option>
                 {["Active", "Inactive"].map((status) => (
                   <optgroup key={status} label={`${status} employees`}>
@@ -315,23 +319,23 @@ export default function App() {
               </select>
             </Field>
             <Field label="Employee ID">
-              <input className={lineInput} value={f.employeeId} onChange={(e) => setField("employeeId", e.target.value)} placeholder="Employee ID" />
+              <input readOnly={readonly} className={lineInput} value={f.employeeId} onChange={(e) => setField("employeeId", e.target.value)} placeholder="Employee ID" />
             </Field>
             <Field label="Designation">
-              <input className={lineInput} value={f.designation} onChange={(e) => setField("designation", e.target.value)} placeholder="Job title" />
+              <input readOnly={readonly} className={lineInput} value={f.designation} onChange={(e) => setField("designation", e.target.value)} placeholder="Job title" />
             </Field>
             <Field label="Department">
-              <input className={lineInput} value={f.department} onChange={(e) => setField("department", e.target.value)} placeholder="Department" />
+              <input readOnly={readonly} className={lineInput} value={f.department} onChange={(e) => setField("department", e.target.value)} placeholder="Department" />
             </Field>
             <Field label="Date & Time of Issue">
-              <input type="datetime-local" className={lineInput} value={f.issueDate} onChange={(e) => setField("issueDate", e.target.value)} />
+              <input readOnly={readonly} type="datetime-local" className={lineInput} value={f.issueDate} onChange={(e) => setField("issueDate", e.target.value)} />
             </Field>
           </div>
 
           {/* Intro */}
           <p className="mt-7 text-[12.5px] leading-[1.8] text-neutral-700">
             I, Mr./Ms./Mrs.{" "}
-            <input
+            <input readOnly={readonly}
               value={f.declName}
               onChange={(e) => setField("declName", e.target.value)}
               placeholder="your full name"
@@ -339,7 +343,7 @@ export default function App() {
               className="mx-0.5 inline-block max-w-full border-0 border-b border-neutral-400 bg-transparent px-1 py-0 text-[12.5px] font-semibold text-neutral-900 outline-none transition-colors placeholder:font-normal placeholder:text-neutral-300 focus:border-neutral-900 print:placeholder:text-transparent"
             />
             {`, working at AMP Fitness${f.designation.trim() ? ` as ${f.designation.trim()}` : ""}`}
-            <Editable value={doc.introRest} onChange={(v) => patch({ introRest: v })} />
+            <Editable readOnly={readonly} value={doc.introRest} onChange={(v) => patch({ introRest: v })} />
           </p>
 
           {/* 01 Assets */}
@@ -360,23 +364,23 @@ export default function App() {
                   <tr key={a.id} className="group border-b border-neutral-200">
                     <td className="px-1.5 py-2 text-[11px] tabular-nums text-neutral-400">{String(i + 1).padStart(2, "0")}</td>
                     <td>
-                      <input className={cn(cellInput, "font-semibold text-neutral-900")} value={a.name} onChange={(e) => updateAsset(a.id, "name", e.target.value)} placeholder="Asset" />
+                      <input readOnly={readonly} className={cn(cellInput, "font-semibold text-neutral-900")} value={a.name} onChange={(e) => updateAsset(a.id, "name", e.target.value)} placeholder="Asset" />
                     </td>
                     <td>
-                      <input className={cellInput} value={a.serial} onChange={(e) => updateAsset(a.id, "serial", e.target.value)} placeholder="Serial no." />
+                      <input readOnly={readonly} className={cellInput} value={a.serial} onChange={(e) => updateAsset(a.id, "serial", e.target.value)} placeholder="Serial no." />
                     </td>
                     <td>
-                      <input list="conditions" className={cellInput} value={a.condition} onChange={(e) => updateAsset(a.id, "condition", e.target.value)} placeholder="e.g. Good" />
+                      <input readOnly={readonly} list="conditions" className={cellInput} value={a.condition} onChange={(e) => updateAsset(a.id, "condition", e.target.value)} placeholder="e.g. Good" />
                     </td>
                     <td>
-                      <input className={cellInput} value={a.remarks} onChange={(e) => updateAsset(a.id, "remarks", e.target.value)} placeholder="Remarks" />
+                      <input readOnly={readonly} className={cellInput} value={a.remarks} onChange={(e) => updateAsset(a.id, "remarks", e.target.value)} placeholder="Remarks" />
                     </td>
                     <td className="text-center print:hidden">
-                      <RemoveX
+                      {!readonly && <RemoveX
                         onClick={() => patch({ assets: doc.assets.filter((x) => x.id !== a.id) })}
                         title="Remove row"
                         className="opacity-0 group-hover:opacity-100"
-                      />
+                      />}
                     </td>
                   </tr>
                 ))}
@@ -395,20 +399,20 @@ export default function App() {
               <option value="Fair" />
               <option value="Needs repair" />
             </datalist>
-            <button
+            {!readonly && <button
               onClick={() => patch({ assets: [...doc.assets, { id: uid(), name: "", serial: "", condition: "", remarks: "" }] })}
               className="mt-2 text-[11px] font-semibold text-sky-deep transition hover:text-neutral-900 print:hidden"
             >
               + Add asset
-            </button>
+            </button>}
           </Section>
 
           <Section n="02" title="Objective" className="mt-7">
-            <Editable value={doc.objective} onChange={(v) => patch({ objective: v })} className="block" />
+            <Editable readOnly={readonly} value={doc.objective} onChange={(v) => patch({ objective: v })} className="block" />
           </Section>
 
           <Section n="03" title="Scope" className="mt-7">
-            <Editable value={doc.scope} onChange={(v) => patch({ scope: v })} className="block" />
+            <Editable readOnly={readonly} value={doc.scope} onChange={(v) => patch({ scope: v })} className="block" />
           </Section>
 
           <div className="h-6" />
@@ -430,31 +434,31 @@ export default function App() {
               {doc.terms.map((t, i) => (
                 <li key={t.id} className="group relative flex gap-4">
                   <span className="w-5 shrink-0 pt-px text-[10.5px] font-semibold tabular-nums text-sky-deep">{String(i + 1).padStart(2, "0")}</span>
-                  <Editable
+                  <Editable readOnly={readonly}
                     value={t.text}
                     onChange={(v) => patch({ terms: doc.terms.map((x) => (x.id === t.id ? { ...x, text: v } : x)) })}
                     className="block flex-1"
                   />
-                  <RemoveX
+                  {!readonly && <RemoveX
                     onClick={() => patch({ terms: doc.terms.filter((x) => x.id !== t.id) })}
                     title="Remove clause"
                     className="absolute -right-7 top-0 opacity-0 group-hover:opacity-100"
-                  />
+                  />}
                 </li>
               ))}
             </ol>
-            <button
+            {!readonly && <button
               onClick={() => patch({ terms: [...doc.terms, { id: uid(), text: "New clause – click to edit." }] })}
               className="mt-2 text-[11px] font-semibold text-brand transition hover:text-brand-dark print:hidden"
             >
               + Add clause
-            </button>
+            </button>}
           </Section>
 
           <Section n="05" title="Employee Declaration & Undertaking" className="mt-7 break-inside-avoid">
             <div className="border-l-2 border-brand pl-5 text-[11.5px] leading-[1.7] text-neutral-700">
-              <Editable value={doc.declaration1} onChange={(v) => patch({ declaration1: v })} className="block" />
-              <Editable value={doc.declaration2} onChange={(v) => patch({ declaration2: v })} className="mt-2.5 block" />
+              <Editable readOnly={readonly} value={doc.declaration1} onChange={(v) => patch({ declaration1: v })} className="block" />
+              <Editable readOnly={readonly} value={doc.declaration2} onChange={(v) => patch({ declaration2: v })} className="mt-2.5 block" />
             </div>
           </Section>
 
@@ -465,14 +469,14 @@ export default function App() {
                 return (
                   <div key={m.key}>
                     <p className="min-h-[2.4em] text-[8.5px] font-semibold uppercase leading-[1.35] tracking-[0.14em] text-neutral-900">{m.label}</p>
-                    <SignatureBox block={b} onOpen={() => setSigning(m.key)} onClear={() => setSigBlock(m.key, { sig: null, signedAt: null })} />
-                    <input
+                    <SignatureBox locked={m.key !== "employee" || alreadySubmitted} block={b} onOpen={() => setSigning(m.key)} onClear={() => setSigBlock(m.key, { sig: null, signedAt: null })} />
+                    <input readOnly={m.key !== "employee" || alreadySubmitted}
                       className={cn(lineInput, "mt-2")}
                       value={b.name}
                       onChange={(e) => setSigBlock(m.key, { name: e.target.value })}
                       placeholder="Printed name"
                     />
-                    <input type="date" className={cn(lineInput, "mt-2 text-[12px]")} value={b.date} onChange={(e) => setSigBlock(m.key, { date: e.target.value })} />
+                    <input readOnly={m.key !== "employee" || alreadySubmitted} type="date" className={cn(lineInput, "mt-2 text-[12px]")} value={b.date} onChange={(e) => setSigBlock(m.key, { date: e.target.value })} />
                     <p className="mt-1.5 h-3 text-[8.5px] tracking-wide text-neutral-400">
                       {b.signedAt ? `Signed electronically · ${fmtSigned(b.signedAt)}` : ""}
                     </p>
@@ -488,13 +492,14 @@ export default function App() {
 
         <div className="print:hidden flex w-[210mm] max-w-full flex-col items-center gap-3 pt-2">
           <button
+            disabled={alreadySubmitted}
             onClick={() => setSubmitOpen(true)}
             className="rounded-md bg-neutral-900 px-8 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-black"
           >
             Submit signed declaration
           </button>
           <p className="text-[11px] text-neutral-400">
-            A signed PDF and the updated running submissions sheet are emailed to Admin / Operations through Mailtrap.
+            Your signed declaration is saved to shared records and emailed to the operations team.
           </p>
         </div>
       </main>
@@ -510,6 +515,7 @@ export default function App() {
       {submitOpen && (
         <SubmitModal
           state={doc}
+          invitationToken={invitationToken}
           onClose={() => setSubmitOpen(false)}
           onNewDeclaration={() => {
             setSubmitOpen(false);

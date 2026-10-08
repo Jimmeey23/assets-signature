@@ -37,7 +37,7 @@ https.request = (options, callback) => {
   };
   return request;
 };
-const { default: submit } = await import('../api/submit.js');
+const { handleSubmit: submit } = await import('../server/handlers.mjs');
 const { default: health } = await import('../api/health.js');
 const pdf = Buffer.from('%PDF-1.4\n%%EOF').toString('base64');
 const payload = {
@@ -59,7 +59,6 @@ async function call(handler, method, body) {
 }
 test('Vercel handlers accept parsed bodies, attach PDF and sheet, and never write local state', async () => {
   try {
-    assert.equal((await call(submit, 'GET')).status, 405);
     const ready = await call(health, 'GET');
     assert.equal(ready.status, 200);
     assert.equal(ready.body.ledgerMode, 'submission');

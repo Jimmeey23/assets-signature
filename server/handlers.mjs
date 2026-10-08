@@ -61,7 +61,7 @@ const ledgerFile = path.join(cfg.dataDir, "submissions.json");
 const redisKey = "p57:asset-declaration:submissions";
 if (ledgerMode === "local") fs.mkdirSync(cfg.dataDir, { recursive: true });
 
-async function redisCommand(command) {
+export async function redisCommand(command) {
   const response = await fetch(redisUrl, {
     method: "POST",
     headers: { Authorization: `Bearer ${redisToken}`, "Content-Type": "application/json" },
@@ -86,7 +86,7 @@ export const readLedger = async () => {
     throw new Error("The submissions ledger could not be read.");
   }
 };
-const writeLedger = async (rows, record) => {
+export const writeLedger = async (rows, record) => {
   if (ledgerMode === "submission") return;
   if (ledgerMode === "shared") {
     await redisCommand(["HSET", redisKey, record.ref, JSON.stringify(record)]);
@@ -116,7 +116,7 @@ const statusOf = (r) => {
   return pending.length ? `Pending: ${pending.join(", ")}` : "Complete";
 };
 
-function buildSheet(records) {
+export function buildSheet(records) {
   const head = [
     "Sr. No.",
     "Submission Ref",
@@ -181,7 +181,7 @@ function buildSheet(records) {
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const str = (v, max = 300) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
-function sanitize(input) {
+export function sanitize(input) {
   const r = input || {};
   return {
     ref: str(r.ref, 60),
@@ -254,7 +254,7 @@ const readBody = (req, limit = 15 * 1024 * 1024) =>
   });
 
 /** Call the Mailtrap REST API. Returns { statusCode, body }. */
-function mailtrapSend(payload) {
+export function mailtrapSend(payload) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(payload);
     const req = https.request(

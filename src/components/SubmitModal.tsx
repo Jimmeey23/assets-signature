@@ -10,6 +10,7 @@ interface Props {
   state: DocState;
   onClose: () => void;
   onNewDeclaration: () => void;
+  invitationToken?: string;
 }
 
 type Phase = "review" | "sending" | "done" | "error";
@@ -41,7 +42,7 @@ const btnDark =
   "rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-30";
 const btnLine = "rounded-md border border-neutral-300 px-3.5 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-900";
 
-export default function SubmitModal({ state, onClose, onNewDeclaration }: Props) {
+export default function SubmitModal({ state, onClose, onNewDeclaration, invitationToken }: Props) {
   const [phase, setPhase] = useState<Phase>("review");
   const [step, setStep] = useState("");
   const [error, setError] = useState("");
@@ -62,7 +63,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
       setPdf(built);
       const record = toRecord(state, ref);
       setStep("Emailing PDF and submission sheet");
-      const r = await submitSubmission(record, built);
+      const r = await submitSubmission(record, built, state, invitationToken);
       saveToLedger(record);
       setResult(r);
       setPhase("done");
@@ -100,11 +101,10 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
               <path d="M5 12l5 5L20 7" />
             </svg>
           </span>
-          <h2 className="mt-4 text-lg font-semibold text-neutral-900">Submission sent</h2>
+          <h2 className="mt-4 text-lg font-semibold text-neutral-900">{result.notificationStatus === "Failed" ? "Submission saved" : "Declaration submitted"}</h2>
           <p className="mt-1.5 text-xs leading-relaxed text-neutral-500">
-            The signed PDF and {result.ledgerMode === "submission" ? "submission details sheet" : "running submissions sheet"} were emailed to
-            <br />
-            <span className="font-medium text-neutral-900">{result.sentTo}</span>
+            {result.notificationStatus === "Failed" ? "Your signed declaration is saved. Email delivery failed; the admin team can retry it from the dashboard." : `Your declaration is saved. The signed PDF and shared sheet were accepted for email delivery to ${result.sentTo}.`}
+
           </p>
           <dl className="mt-6 divide-y divide-neutral-100 border-y border-neutral-100 text-left text-xs">
             <div className="flex justify-between py-2.5">
@@ -122,9 +122,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration }: Props)
             <button onClick={downloadPdf} className={btnLine}>
               Download my copy (PDF)
             </button>
-            <button onClick={onNewDeclaration} className={btnDark}>
-              New declaration
-            </button>
+            {!invitationToken && <button onClick={onNewDeclaration} className={btnDark}>New declaration</button>}
           </div>
           <button onClick={onClose} className="mt-3 text-[11px] font-medium text-neutral-400 hover:text-neutral-700">
             Close

@@ -51,15 +51,8 @@ export interface DocState {
   sigs: Record<SigKey, SigBlock>;
 }
 
-export const RECIPIENT = "jimmeey@physique57india.com";
-export const LEGAL_NAME = "AMP FITNESS LLP";
-export const DOC_TITLE = "COMPANY ASSET DECLARATION / UNDERTAKING";
-
-export const SIG_META: { key: SigKey; label: string }[] = [
-  { key: "employee", label: "Employee Signature" },
-  { key: "handover", label: "Handed Over By" },
-  { key: "admin", label: "Admin / Operations Verification" },
-];
+import { SIG_META } from "../../shared/document-meta.js";
+export { RECIPIENT, LEGAL_NAME, DOC_TITLE, SIG_META, declarationIntro } from "../../shared/document-meta.js";
 
 let counter = 0;
 export const uid = () => Date.now() * 1000 + (counter++ % 1000);
@@ -125,8 +118,6 @@ export const defaultDoc = (): DocState => ({
   sigs: { employee: emptySig(), handover: emptySig(), admin: emptySig() },
 });
 
-export const declarationIntro = (d: DocState) =>
-  `, working at AMP Fitness${d.fields.designation.trim() ? ` as ${d.fields.designation.trim()}` : ""}${d.introRest}`;
 
 const KEY = "physique57-asset-declaration-v2";
 

@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { cfg, apiConfigured, handleHealth, handleSubmit, sendJson, rateLimited } from "./handlers.mjs";
+import { handleAdmin, handleInvitation, handleWorkflowSubmit } from "./workflow.mjs";
+import { cfg, apiConfigured, handleHealth, sendJson, rateLimited } from "./handlers.mjs";
 
 /* ───────── Static files ───────── */
 const MIME = {
@@ -42,10 +43,12 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url === "/api/health") {
       return await handleHealth(req, res);
     }
+    if (url === "/api/admin") return await handleAdmin(req, res);
+    if (url === "/api/invitation") return await handleInvitation(req, res);
     if (req.method === "POST" && url === "/api/submit") {
       const ip = req.socket.remoteAddress || "unknown";
       if (rateLimited(ip)) return sendJson(res, 429, { ok: false, error: "Too many submissions from this device. Try again later." });
-      return await handleSubmit(req, res);
+      return await handleWorkflowSubmit(req, res);
     }
     if (req.method === "GET" && !url.startsWith("/api/")) return serveStatic(req, res);
     return sendJson(res, 404, { ok: false, error: "Not found" });

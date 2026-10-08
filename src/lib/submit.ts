@@ -1,4 +1,4 @@
-import type { SubmissionRecord } from "./doc";
+import type { DocState, SubmissionRecord } from "./doc";
 import type { BuiltPdf } from "./pdf";
 
 const EP_KEY = "physique57-submit-endpoint-v2";
@@ -36,11 +36,13 @@ export interface SubmitResult {
   rowNumber: number;
   totalSubmissions: number;
   ledgerMode?: "local" | "shared" | "submission";
+  notificationStatus?: "Accepted" | "Failed";
+  alreadySubmitted?: boolean;
 }
 
-export async function submitSubmission(record: SubmissionRecord, pdf: BuiltPdf): Promise<SubmitResult> {
+export async function submitSubmission(record: SubmissionRecord, pdf: BuiltPdf, document: DocState, invitationToken?: string): Promise<SubmitResult> {
   const url = getEndpoint();
-  const body = JSON.stringify({ record, pdf: { filename: pdf.filename, base64: pdf.base64 } });
+  const body = JSON.stringify({ record, document, invitationToken, pdf: { filename: pdf.filename, base64: pdf.base64 } });
   if (new Blob([body]).size > 4_000_000) {
     throw new SubmitError("The signed PDF is too large for email submission. Please download the PDF and send it manually.");
   }

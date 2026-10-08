@@ -4,209 +4,239 @@
     "name": "Akshay Rane",
     "designation": "Sr. Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "akshay@physique57mumbai.com"
   },
   {
     "id": "HRM1",
     "name": "Aneesha Mistri",
     "designation": "",
     "department": "",
-    "status": "Inactive"
+    "status": "Inactive",
+    "email": "aneesha@physique57india.com"
   },
   {
     "id": "0053",
     "name": "Aneesha Mistry",
     "designation": "",
     "department": "",
-    "status": "Inactive"
+    "status": "Inactive",
+    "email": "aneesha@physique57india.com"
   },
   {
     "id": "0001",
     "name": "Anisha Shah",
     "designation": "Master Trainer",
     "department": "Training",
-    "status": "Active"
+    "status": "Active",
+    "email": "anisha@physique57india.com"
   },
   {
     "id": "0046",
     "name": "Deesha Changwani",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "deesha@physique57mumbai.com"
   },
   {
     "id": "0014",
     "name": "Gaurav Sogam",
     "designation": "Accounts Assistant",
     "department": "Accounts",
-    "status": "Active"
+    "status": "Active",
+    "email": "gaurav@physique57mumbai.com"
   },
   {
     "id": "0023",
     "name": "Imran Shaikh",
     "designation": "Sr. Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "imran@physique57mumbai.com"
   },
   {
     "id": "0006",
     "name": "Jimmeey Gondaa",
     "designation": "Head - Sales & Client Services",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "jimmeey@physique57india.com"
   },
   {
     "id": "0004",
     "name": "Mitali Kumar",
     "designation": "Chief Operating Officer",
     "department": "Management",
-    "status": "Active"
+    "status": "Active",
+    "email": "mitali@physique57india.com"
   },
   {
     "id": "0008",
     "name": "Mrigakshi Jaiswal",
     "designation": "Trainer",
     "department": "Training",
-    "status": "Active"
+    "status": "Active",
+    "email": "mrigakshi@physique57mumbai.com"
   },
   {
     "id": "0044",
     "name": "Nadiya Shaikh",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "nadiya@physique57mumbai.com"
   },
   {
     "id": "0025",
     "name": "Prathap K P",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "prathap@physique57bengaluru.com"
   },
   {
     "id": "0051",
     "name": "Pujal Jathar",
     "designation": "Sr. Finance & Accounts Executive",
     "department": "Accounts",
-    "status": "Active"
+    "status": "Active",
+    "email": "pujal@physique57mumbai.com"
   },
   {
     "id": "0012",
     "name": "Pushyank Nahar",
     "designation": "Trainer",
     "department": "Training",
-    "status": "Active"
+    "status": "Active",
+    "email": "pushyank@physique57bengaluru.com"
   },
   {
     "id": "0049",
     "name": "Rasika Kalambe",
     "designation": "Accounts Executive",
     "department": "Accounts",
-    "status": "Active"
+    "status": "Active",
+    "email": "rasika@physique57mumbai.com"
   },
   {
     "id": "0043",
     "name": "Saachi Shetty",
     "designation": "Marketing Lead",
     "department": "Marketing",
-    "status": "Active"
+    "status": "Active",
+    "email": "saachi.s@physique57bengaluru.com"
   },
   {
     "id": "0005",
     "name": "Saachi Shetty",
     "designation": "Senior Operations Manager",
     "department": "Operations",
-    "status": "Active"
+    "status": "Active",
+    "email": "saachi@physique57india.com"
   },
   {
     "id": "00025",
     "name": "Sachin Nalawade",
     "designation": "Accounts Assistant",
     "department": "Accounts",
-    "status": "Active"
+    "status": "Active",
+    "email": "sachin@physique57mumbai.com"
   },
   {
     "id": "0022",
     "name": "Sagar Ingole",
     "designation": "Associate",
     "department": "Operations",
-    "status": "Active"
+    "status": "Active",
+    "email": "accounts@physique57mumbai.com"
   },
   {
     "id": "0047",
     "name": "Sashi Singh",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "sashi@physique57bengaluru.com"
   },
   {
     "id": "0054",
     "name": "Shaina Saraiya",
     "designation": "Associate",
     "department": "Marketing",
-    "status": "Active"
+    "status": "Active",
+    "email": "shaina@physique57mumbai.com"
   },
   {
     "id": "0024",
     "name": "Sheetal Kataria",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "sheetal@physique57mumbai.com"
   },
   {
     "id": "0011",
     "name": "Shifa Ali",
     "designation": "Regional Operations Head - South",
     "department": "Management",
-    "status": "Active"
+    "status": "Active",
+    "email": "shifa@physique57bengaluru.com"
   },
   {
     "id": "0018",
     "name": "Shipra Pinge",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "shipra@physique57mumbai.com"
   },
   {
     "id": "0019",
     "name": "Taahira Sayyed",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "tahira@physique57mumbai.com"
   },
   {
     "id": "0045",
     "name": "Vahishta Fitter",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "vahishta@physique57mumbai.com"
   },
   {
     "id": "0021",
     "name": "Vivaran Dhasmana",
     "designation": "Trainer",
     "department": "Training",
-    "status": "Active"
+    "status": "Active",
+    "email": "vivaran@physique57mumbai.com"
   },
   {
     "id": "0016",
     "name": "Wungsingla Serou",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "api@physique57bengaluru.com"
   },
   {
     "id": "0052",
     "name": "Yashas K",
     "designation": "Sales & Client Servicing Associate",
     "department": "Sales & Client Servicing",
-    "status": "Active"
+    "status": "Active",
+    "email": "yashas@physique57bengaluru.com"
   },
   {
     "id": "0003",
     "name": "Zahur Shaikh",
     "designation": "Studio Coordinator",
     "department": "Operations",
-    "status": "Active"
+    "status": "Active",
+    "email": "zahur@physique57mumbai.com"
   }
 ]
