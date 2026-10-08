@@ -52,6 +52,8 @@ export interface DocState {
 }
 
 import { SIG_META } from "../../shared/document-meta.js";
+import { DEFAULT_FORM_CONFIG, missingRequired, presetAsset, type FormConfig } from "../../shared/form-config.js";
+export { ASSET_COLUMNS, DEFAULT_FORM_CONFIG, presetAsset, type AssetColumnKey, type FormConfig } from "../../shared/form-config.js";
 export { RECIPIENT, LEGAL_NAME, DOC_TITLE, SIG_META, declarationIntro } from "../../shared/document-meta.js";
 
 let counter = 0;
@@ -77,7 +79,7 @@ export const makeRef = () => {
 
 const emptySig = (): SigBlock => ({ sig: null, name: "", date: "", signedAt: null });
 
-export const defaultDoc = (): DocState => ({
+export const defaultDoc = (config: FormConfig = DEFAULT_FORM_CONFIG): DocState => ({
   fields: {
     refNo: makeRef(),
     employeeName: "",
@@ -89,13 +91,7 @@ export const defaultDoc = (): DocState => ({
   },
   introRest:
     ", acknowledge that the following company assets have been issued to me and are provided subject to the terms and conditions below.",
-  assets: ["Company Laptop", "Laptop Charger", "Mobile Phone", "Cycle Shoe"].map((name) => ({
-    id: uid(),
-    name,
-    serial: "",
-    condition: "",
-    remarks: "",
-  })),
+  assets: config.defaultAssets.map((name) => ({ id: uid(), ...presetAsset(config, name) })),
   objective:
     "AMP Fitness recognizes that use of company-provided assets is necessary for official work and studio operations. Employees are expected to use the assets responsibly and maintain them in good condition.",
   scope:
@@ -121,8 +117,8 @@ export const defaultDoc = (): DocState => ({
 
 const KEY = "physique57-asset-declaration-v2";
 
-export const loadDoc = (): DocState => {
-  const base = defaultDoc();
+export const loadDoc = (config: FormConfig = DEFAULT_FORM_CONFIG): DocState => {
+  const base = defaultDoc(config);
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return base;
@@ -171,7 +167,7 @@ export interface Issue {
   ok: boolean;
 }
 
-export const checkDoc = (d: DocState): Issue[] => {
+export const checkDoc = (d: DocState, config: FormConfig = DEFAULT_FORM_CONFIG): Issue[] => {
   const f = d.fields;
   const filled = (s: string) => s.trim().length > 0;
   return [
@@ -181,6 +177,7 @@ export const checkDoc = (d: DocState): Issue[] => {
     { label: "Department", required: true, ok: filled(f.department) },
     { label: "Declaration name (\"I, Mr./Ms./Mrs.\")", required: true, ok: filled(f.declName) },
     { label: "At least one asset listed", required: true, ok: d.assets.some((a) => filled(a.name)) },
+    ...missingRequired(d.assets, config).map((label) => ({ label: `${label} for every asset`, required: true, ok: false })),
     { label: "Employee signature", required: true, ok: !!d.sigs.employee.sig },
     { label: "Handed Over By signature", required: false, ok: !!d.sigs.handover.sig },
     { label: "Admin / Operations verification signature", required: false, ok: !!d.sigs.admin.sig },

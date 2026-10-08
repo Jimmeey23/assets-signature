@@ -6,17 +6,22 @@ import SettingsModal from "./components/SettingsModal";
 import SignatureModal from "./components/SignatureModal";
 import SubmitModal from "./components/SubmitModal";
 import {
+  ASSET_COLUMNS,
+  DEFAULT_FORM_CONFIG,
   DOC_TITLE,
   LEGAL_NAME,
   SIG_META,
   clearSaved,
   defaultDoc,
   loadDoc,
+  presetAsset,
   saveDoc,
   todayISO,
   uid,
   type Asset,
+  type AssetColumnKey,
   type DocState,
+  type FormConfig,
   type Fields,
   type Sig,
   type SigBlock,
@@ -31,6 +36,21 @@ const lineInput =
 
 const cellInput =
   "block w-full bg-transparent px-1.5 py-2 text-[12px] text-neutral-800 outline-none transition-colors placeholder:text-neutral-300 hover:bg-brand/5 focus:bg-brand/10 print:placeholder:text-transparent print:hover:bg-transparent";
+
+/** Asset cell: a dropdown when the admin has configured options, otherwise free text. */
+function AssetCell({ value, column, config, readOnly, className, placeholder, onChange }: { value: string; column: AssetColumnKey; config: FormConfig; readOnly: boolean; className: string; placeholder: string; onChange: (v: string) => void }) {
+  const { options, required } = config.columns[column];
+  const label = ASSET_COLUMNS.find((c) => c.key === column)!.label;
+  const missing = column !== "name" && required && !readOnly && !value.trim();
+  if (options.length) return (
+    <select disabled={readOnly} aria-label={label} aria-required={required} className={cn(className, "print:appearance-none", !value && "text-neutral-300", missing && "bg-red-50/60")} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{placeholder}</option>
+      {!options.includes(value) && value && <option value={value}>{value}</option>}
+      {options.map((o) => <option key={o} value={o} className="text-neutral-800">{o}</option>)}
+    </select>
+  );
+  return <input readOnly={readOnly} aria-label={label} aria-required={required} className={cn(className, missing && "bg-red-50/60")} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />;
+}
 
 const fmtSigned = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
@@ -126,9 +146,9 @@ function SignatureBox({ block, onOpen, onClear, locked }: { block: SigBlock; onO
   );
 }
 
-export default function App({ initialDocument, invitationToken, alreadySubmitted = false }: { initialDocument?: DocState; invitationToken?: string; alreadySubmitted?: boolean }) {
+export default function App({ initialDocument, invitationToken, alreadySubmitted = false, formConfig = DEFAULT_FORM_CONFIG }: { initialDocument?: DocState; invitationToken?: string; alreadySubmitted?: boolean; formConfig?: FormConfig }) {
   const readonly = Boolean(invitationToken);
-  const [doc, setDoc] = useState<DocState>(() => initialDocument || loadDoc());
+  const [doc, setDoc] = useState<DocState>(() => initialDocument || loadDoc(formConfig));
   const [resetKey, setResetKey] = useState(0);
   const [signing, setSigning] = useState<SigKey | null>(null);
   const [scale, setScale] = useState(1);
@@ -191,7 +211,7 @@ export default function App({ initialDocument, invitationToken, alreadySubmitted
 
   const startFresh = () => {
     clearSaved();
-    setDoc(defaultDoc());
+    setDoc(defaultDoc(formConfig));
     setResetKey((k) => k + 1);
     window.scrollTo({ top: 0 });
   };
@@ -352,10 +372,10 @@ export default function App({ initialDocument, invitationToken, alreadySubmitted
               <thead>
                 <tr className="border-b border-neutral-900 text-[8.5px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
                   <th className="w-[7%] px-1.5 pb-2 pt-1 font-semibold">#</th>
-                  <th className="w-[26%] px-1.5 pb-2 pt-1 font-semibold">Company Asset</th>
-                  <th className="w-[22%] px-1.5 pb-2 pt-1 font-semibold">Asset / Serial No.</th>
-                  <th className="w-[19%] px-1.5 pb-2 pt-1 font-semibold">Condition at Issue</th>
-                  <th className="px-1.5 pb-2 pt-1 font-semibold">Remarks</th>
+                  <th className="w-[26%] px-1.5 pb-2 pt-1 font-semibold">Company Asset{formConfig.columns.name.required && <span className="text-red-400 print:hidden"> *</span>}</th>
+                  <th className="w-[22%] px-1.5 pb-2 pt-1 font-semibold">Asset / Serial No.{formConfig.columns.serial.required && <span className="text-red-400 print:hidden"> *</span>}</th>
+                  <th className="w-[19%] px-1.5 pb-2 pt-1 font-semibold">Condition at Issue{formConfig.columns.condition.required && <span className="text-red-400 print:hidden"> *</span>}</th>
+                  <th className="px-1.5 pb-2 pt-1 font-semibold">Remarks{formConfig.columns.remarks.required && <span className="text-red-400 print:hidden"> *</span>}</th>
                   <th className="w-6 print:hidden" />
                 </tr>
               </thead>
@@ -364,16 +384,16 @@ export default function App({ initialDocument, invitationToken, alreadySubmitted
                   <tr key={a.id} className="group border-b border-neutral-200">
                     <td className="px-1.5 py-2 text-[11px] tabular-nums text-neutral-400">{String(i + 1).padStart(2, "0")}</td>
                     <td>
-                      <input readOnly={readonly} className={cn(cellInput, "font-semibold text-neutral-900")} value={a.name} onChange={(e) => updateAsset(a.id, "name", e.target.value)} placeholder="Asset" />
+                      <AssetCell column="name" config={formConfig} readOnly={readonly} className={cn(cellInput, "font-semibold text-neutral-900")} value={a.name} onChange={(v) => updateAsset(a.id, "name", v)} placeholder="Asset" />
                     </td>
                     <td>
-                      <input readOnly={readonly} className={cellInput} value={a.serial} onChange={(e) => updateAsset(a.id, "serial", e.target.value)} placeholder="Serial no." />
+                      <AssetCell column="serial" config={formConfig} readOnly={readonly} className={cellInput} value={a.serial} onChange={(v) => updateAsset(a.id, "serial", v)} placeholder="Serial no." />
                     </td>
                     <td>
-                      <input readOnly={readonly} list="conditions" className={cellInput} value={a.condition} onChange={(e) => updateAsset(a.id, "condition", e.target.value)} placeholder="e.g. Good" />
+                      <AssetCell column="condition" config={formConfig} readOnly={readonly} className={cellInput} value={a.condition} onChange={(v) => updateAsset(a.id, "condition", v)} placeholder="Condition" />
                     </td>
                     <td>
-                      <input readOnly={readonly} className={cellInput} value={a.remarks} onChange={(e) => updateAsset(a.id, "remarks", e.target.value)} placeholder="Remarks" />
+                      <AssetCell column="remarks" config={formConfig} readOnly={readonly} className={cellInput} value={a.remarks} onChange={(v) => updateAsset(a.id, "remarks", v)} placeholder="Remarks" />
                     </td>
                     <td className="text-center print:hidden">
                       {!readonly && <RemoveX
@@ -393,14 +413,8 @@ export default function App({ initialDocument, invitationToken, alreadySubmitted
                 )}
               </tbody>
             </table>
-            <datalist id="conditions">
-              <option value="New" />
-              <option value="Good" />
-              <option value="Fair" />
-              <option value="Needs repair" />
-            </datalist>
             {!readonly && <button
-              onClick={() => patch({ assets: [...doc.assets, { id: uid(), name: "", serial: "", condition: "", remarks: "" }] })}
+              onClick={() => patch({ assets: [...doc.assets, { id: uid(), ...presetAsset(formConfig) }] })}
               className="mt-2 text-[11px] font-semibold text-sky-deep transition hover:text-neutral-900 print:hidden"
             >
               + Add asset
@@ -515,6 +529,7 @@ export default function App({ initialDocument, invitationToken, alreadySubmitted
       {submitOpen && (
         <SubmitModal
           state={doc}
+          formConfig={formConfig}
           invitationToken={invitationToken}
           onClose={() => setSubmitOpen(false)}
           onNewDeclaration={() => {

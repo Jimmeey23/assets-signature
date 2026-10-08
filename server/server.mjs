@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
-import { handleAdmin, handleInvitation, handleWorkflowSubmit } from "./workflow.mjs";
+import { handleAdmin, handleFormConfig, handleInvitation, handleWorkflowSubmit } from "./workflow.mjs";
 import { cfg, apiConfigured, handleHealth, sendJson, rateLimited } from "./handlers.mjs";
 
 /* ───────── Static files ───────── */
@@ -45,6 +45,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (url === "/api/admin") return await handleAdmin(req, res);
     if (url === "/api/invitation") return await handleInvitation(req, res);
+    if (url === "/api/form-config") return await handleFormConfig(req, res);
     if (req.method === "POST" && url === "/api/submit") {
       const ip = req.socket.remoteAddress || "unknown";
       if (rateLimited(ip)) return sendJson(res, 429, { ok: false, error: "Too many submissions from this device. Try again later." });

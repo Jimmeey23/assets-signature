@@ -4,9 +4,11 @@ import fs from 'node:fs';
 import { cfg, apiConfigured, ledgerMode, redisCommand, readLedger, writeLedger, buildSheet, sanitize, mailtrapSend, sendJson } from './handlers.mjs';
 import { buildPdf } from '../shared/pdf-engine.js';
 import { SIG_META } from '../shared/document-meta.js';
+import { DEFAULT_FORM_CONFIG, missingRequired, normalizeFormConfig } from '../shared/form-config.js';
 
 const DOCS = 'p57:asset-declaration:documents';
 const PRESETS = 'p57:asset-declaration:signature-presets';
+const FORM_CONFIG = 'p57:asset-declaration:form-config';
 const APP_URL = process.env.APP_URL || 'https://assets-signature.vercel.app';
 const logo = `data:image/png;base64,${fs.readFileSync(new URL('../src/assets/physique57-logo.png', import.meta.url)).toString('base64')}`;
 const directory = JSON.parse(fs.readFileSync(new URL('../src/data/employees.json', import.meta.url), 'utf8'));
@@ -217,6 +219,15 @@ async function saveAdminDocument(body) {
     return publicDoc(item);
   });
 }
+async function readFormConfig() {
+  if (ledgerMode !== 'shared') return DEFAULT_FORM_CONFIG;
+  const value = await redisCommand(['GET', FORM_CONFIG]);
+  return value ? normalizeFormConfig(JSON.parse(value)) : DEFAULT_FORM_CONFIG;
+}
+async function requireAssetFields(doc) {
+  const missing = missingRequired(doc.assets, await readFormConfig());
+  if (missing.length) throw error(422, `Fill in ${missing.join(', ')} for every asset.`);
+}
 // Saved handover and admin signatures that prefill every new declaration and bulk template.
 async function readPresets() {
   const value = await redisCommand(['GET', PRESETS]);
@@ -286,11 +297,17 @@ export async function handleAdmin(req, res) {
     }
     if (action === 'presets' && req.method === 'GET') return sendJson(res, 200, { ok: true, presets: await readPresets() });
     if (action === 'presets' && req.method === 'POST') return sendJson(res, 200, { ok: true, presets: await savePresets(body.presets) });
+    if (action === 'form-config' && req.method === 'POST') {
+      const config = normalizeFormConfig(body.config);
+      await redisCommand(['SET', FORM_CONFIG, JSON.stringify(config)]);
+      return sendJson(res, 200, { ok: true, config });
+    }
     if (action === 'save' && req.method === 'POST') return sendJson(res, 200, { ok: true, item: await saveAdminDocument(body) });
     if (action === 'invite' && req.method === 'POST') {
       const template = await readDoc(body.id);
       if (template.revision !== body.revision) throw error(409, 'Save or reload the template before sending.');
       if (!template.document.sigs.handover.sig || !template.document.sigs.admin.sig || !template.document.sigs.handover.name || !template.document.sigs.admin.name) throw error(422, 'Sign Handed Over By and Admin / Operations Verification before sending invitations.');
+      await requireAssetFields(template.document);
       if (!Array.isArray(body.recipients) || body.recipients.length < 1 || body.recipients.length > 5 || !text(body.batchId)) throw error(422, 'Choose between one and five recipients per request.');
       const results = [];
       for (const recipient of body.recipients) {
@@ -371,6 +388,7 @@ export async function handleWorkflowSubmit(req, res) {
         return mailDocument(item, [...new Set([cfg.to, item.recipientEmail].filter(Boolean))], 'completion');
       });
     } else {
+      await requireAssetFields(supplied);
       if (supplied.sigs.handover.sig || supplied.sigs.admin.sig) throw error(403, 'Admin signatures can only be added through the protected admin center.');
       if (!supplied.fields.employeeName || !supplied.fields.employeeId || !supplied.fields.designation || !supplied.fields.department || !supplied.fields.refNo) throw error(422, 'Complete the employee details before submitting.');
       const id = hash(`standalone:${supplied.fields.refNo}`).slice(0, 32);
@@ -396,4 +414,10 @@ export async function handleWorkflowSubmit(req, res) {
     if (!e.status || e.status >= 500) console.error('Submission failed', e.message);
     return sendJson(res, e.status || 503, { ok: false, error: e.message || 'The submission service is unavailable.' });
   }
+}
+export async function handleFormConfig(req, res) {
+  try {
+    if (req.method !== 'GET') throw error(405, 'Use GET to read the form settings.');
+    return sendJson(res, 200, { ok: true, config: await readFormConfig() }, { 'Cache-Control': 'no-store' });
+  } catch (e) { return sendJson(res, e.status || 503, { ok: false, error: e.message }); }
 }

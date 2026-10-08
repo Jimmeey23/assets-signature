@@ -34,7 +34,7 @@ https.request = (_, callback) => {
   req.end=()=>{ const res=new EventEmitter();res.statusCode=mailFail?401:200;callback(res);queueMicrotask(()=>{res.emit('data',Buffer.from(JSON.stringify(mailFail?{success:false,message:'Test rejection'}:{success:true,message_ids:['test-message']})));res.emit('end');}); };
   return req;
 };
-const { handleAdmin: admin, handleInvitation: invitation, handleWorkflowSubmit: submit } = await import('../server/workflow.mjs');
+const { handleAdmin: admin, handleFormConfig: formConfig, handleInvitation: invitation, handleWorkflowSubmit: submit } = await import('../server/workflow.mjs');
 const image=`data:image/png;base64,${fs.readFileSync(new URL('../src/assets/physique57-logo.png',import.meta.url)).toString('base64')}`;
 const sig = name => ({sig:{method:'type',image,text:name},name,date:'2026-10-08',signedAt:null});
 const empty = () => ({sig:null,name:'',date:'',signedAt:null});
@@ -103,6 +103,20 @@ test('Protected admin, pre-signing, bulk invite, recipient submission and live s
   assert.equal(preset.status,200);assert.equal(preset.body.presets.handover.sig.image,image);assert.equal(preset.body.presets.admin.name,'Test Ops');
   assert.equal((await call(admin,'/api/admin?action=presets')).body.presets.handover.name,'Test Handover');
   assert.equal((await call(admin,'/api/admin?action=presets','GET',undefined,false)).status,401);
+  // Admin form settings drive dropdowns, required columns and preset values for everyone.
+  const defaults=await call(formConfig,'/api/form-config','GET',undefined,false);
+  assert.equal(defaults.status,200);assert.deepEqual(defaults.body.config.columns.condition.options,['New','Good','Fair','Needs repair']);
+  assert.equal((await call(admin,'/api/admin?action=form-config','POST',{config:{}},false)).status,401);
+  const configured=await call(admin,'/api/admin?action=form-config','POST',{config:{defaultAssets:['Laptop',' Laptop ',''],columns:{name:{required:false},serial:{required:true,options:[],preset:''},condition:{required:true,options:['Sealed','Used'],preset:'Sealed'},remarks:{required:false,options:[],preset:'Issued at studio'}}}});
+  assert.equal(configured.status,200);assert.deepEqual(configured.body.config.defaultAssets,['Laptop']);assert.equal(configured.body.config.columns.name.required,true);
+  assert.equal((await call(formConfig,'/api/form-config','GET',undefined,false)).body.config.columns.remarks.preset,'Issued at studio');
+  const noSerial=structuredClone(document);noSerial.assets[0].serial='';noSerial.assets[0].condition='Sealed';
+  const noSerialDraft=(await call(admin,'/api/admin?action=save','POST',{document:noSerial})).body.item;
+  const blockedInvite=await call(admin,'/api/admin?action=invite','POST',{id:noSerialDraft.id,revision:noSerialDraft.revision,batchId:'TEST-REQUIRED',recipients:[{employeeId:'0006',email:'recipient@example.com'}]});
+  assert.equal(blockedInvite.status,422);assert.match(blockedInvite.body.error,/Asset \/ Serial No\./);
+  const publicMissing=structuredClone(noSerial);publicMissing.sigs={employee:sig('Test'),handover:empty(),admin:empty()};publicMissing.fields={...publicMissing.fields,refNo:'REQ-TEST',employeeName:'Test',employeeId:'TEST',declName:'Test',designation:'Test',department:'Test'};
+  assert.equal((await call(submit,'/api/submit','POST',{document:publicMissing},false)).status,422);
+  await call(admin,'/api/admin?action=form-config','POST',{config:{columns:{name:{required:true,options:[],preset:''},serial:{required:false,options:[],preset:''},condition:{required:false,options:[],preset:''},remarks:{required:false,options:[],preset:''}}}});
   const publicForgery=structuredClone(document);publicForgery.fields={...publicForgery.fields,refNo:'PUBLIC-TEST',employeeName:'Test',employeeId:'TEST',declName:'Test',designation:'Test',department:'Test'};publicForgery.sigs.employee=sig('Test');
   assert.equal((await call(submit,'/api/submit','POST',{document:publicForgery},false)).status,403);
   // A notification failure must not erase the signed submission.

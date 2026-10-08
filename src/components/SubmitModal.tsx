@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { RECIPIENT, checkDoc, makeRef, toRecord, type DocState } from "../lib/doc";
+import { RECIPIENT, checkDoc, makeRef, toRecord, type DocState, type FormConfig } from "../lib/doc";
 import { downloadBlob } from "../lib/download";
 import { SHEET_FILENAME, buildSheet, loadLedger, saveToLedger } from "../lib/ledger";
 import { buildPdf, type BuiltPdf } from "../lib/pdf";
@@ -8,6 +8,7 @@ import { cn } from "../utils/cn";
 
 interface Props {
   state: DocState;
+  formConfig: FormConfig;
   onClose: () => void;
   onNewDeclaration: () => void;
   invitationToken?: string;
@@ -42,7 +43,7 @@ const btnDark =
   "rounded-md bg-neutral-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-30";
 const btnLine = "rounded-md border border-neutral-300 px-3.5 py-2 text-xs font-semibold text-neutral-700 transition hover:border-neutral-900";
 
-export default function SubmitModal({ state, onClose, onNewDeclaration, invitationToken }: Props) {
+export default function SubmitModal({ state, formConfig, onClose, onNewDeclaration, invitationToken }: Props) {
   const [phase, setPhase] = useState<Phase>("review");
   const [step, setStep] = useState("");
   const [error, setError] = useState("");
@@ -50,7 +51,7 @@ export default function SubmitModal({ state, onClose, onNewDeclaration, invitati
   const [pdf, setPdf] = useState<BuiltPdf | null>(null);
 
   const ref = useMemo(() => state.fields.refNo.trim() || makeRef(), [state.fields.refNo]);
-  const issues = checkDoc(state);
+  const issues = checkDoc(state, formConfig);
   const blocked = issues.some((i) => i.required && !i.ok);
   const pendingOptional = issues.filter((i) => !i.required && !i.ok);
 
