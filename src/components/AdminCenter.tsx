@@ -175,14 +175,14 @@ function AdminEditor({ initial, presets, onPresets, formConfig, onClose, onSaved
   const [signing, setSigning] = useState<SigKey | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [message, setMessage] = useState('');
   const [tab, setTab] = useState<'document' | 'bulk' | 'history'>('document');
   const [selected, setSelected] = useState<string[]>([]); const [emails, setEmails] = useState<Record<string,string>>(() => Object.fromEntries(employees.map(e => [e.id,e.email])));
-  const [sendTo, setSendTo] = useState(initial?.recipientEmail ? `${initial.recipientEmail}, jimmeey@physique57india.com` : 'jimmeey@physique57india.com');
+  const [sendTo, setSendTo] = useState(initial?.recipientEmail ? `${initial.recipientEmail}, zahur@physique57mumbai.com` : 'zahur@physique57mumbai.com');
   const [preview, setPreview] = useState(''); const [progress, setProgress] = useState(''); const [dirty, setDirty] = useState(!initial);
   const [bulkResults, setBulkResults] = useState<{ failed: number; error?: string; item?: AdminItem; employeeId?: string }[]>([]);
   const [batchId, setBatchId] = useState(() => crypto.randomUUID());
   const issued = Boolean(item?.invitedAt || item?.submittedAt);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   const change = (next: DocState) => { setDoc(next); setDirty(true); setMessage(''); };
-  const pick = (id: string) => { const employee = employees.find(e => e.id === id); change({ ...doc, fields: { ...doc.fields, employeeName: employee?.name || '', employeeId: employee?.id || '', declName: employee?.name || '', designation: employee?.designation || '', department: employee?.department || '' } }); setRecipientEmail(employee?.email || ''); if (employee?.email) setSendTo(`${employee.email}, jimmeey@physique57india.com`); };
+  const pick = (id: string) => { const employee = employees.find(e => e.id === id); change({ ...doc, fields: { ...doc.fields, employeeName: employee?.name || '', employeeId: employee?.id || '', declName: employee?.name || '', designation: employee?.designation || '', department: employee?.department || '' } }); setRecipientEmail(employee?.email || ''); if (employee?.email) setSendTo(`${employee.email}, zahur@physique57mumbai.com`); };
   async function save() {
     setError('');
     const result = await adminRequest<{ item: AdminItem }>('save', { id: item?.id, revision: item?.revision, document: doc, recipientEmail });

@@ -10,7 +10,7 @@ On every submission the server:
 2. Appends/updates the row in the running ledger (`server/data/submissions.json`).
 3. Rebuilds the running Excel sheet (`Submissions` + `Asset Register` tabs).
 4. POSTs to the Mailtrap API with **both** attachments (PDF + running sheet)
-   addressed to `jimmeey@physique57india.com`.
+   addressed to `zahur@physique57mumbai.com`.
 5. Only writes the row to the ledger *after* Mailtrap accepts the email, so a
    failed send can be retried without creating a duplicate row.
 
@@ -24,7 +24,7 @@ On every submission the server:
    ```
    MAILTRAP_API_TOKEN=your_api_token_here
    MAILTRAP_FROM=declarations@physique57india.com   # must be on your verified domain
-   # Recipient is fixed to jimmeey@physique57india.com
+   # Recipient is fixed to zahur@physique57mumbai.com
    ```
 3. Run:
    ```bash

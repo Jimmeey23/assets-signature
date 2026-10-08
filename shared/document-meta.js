@@ -1,4 +1,4 @@
-export const RECIPIENT = "jimmeey@physique57india.com";
+export const RECIPIENT = "zahur@physique57mumbai.com";
 export const LEGAL_NAME = "AMP FITNESS LLP";
 export const DOC_TITLE = "COMPANY ASSET DECLARATION / UNDERTAKING";
 export const SIG_META = [

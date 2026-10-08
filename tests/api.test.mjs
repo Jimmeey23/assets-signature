@@ -69,10 +69,10 @@ test('Vercel handlers accept parsed bodies, attach PDF and sheet, and never writ
     assert.equal(requests, 0);
     const success = await call(submit, 'POST', payload);
     assert.equal(success.status, 200);
-    assert.equal(success.body.sentTo, 'jimmeey@physique57india.com');
+    assert.equal(success.body.sentTo, 'zahur@physique57mumbai.com');
     assert.equal(success.body.ledgerMode, 'submission');
     assert.equal(captured.attachments[0].content, pdf);
-    assert.equal(captured.to[0].email, 'jimmeey@physique57india.com');
+    assert.equal(captured.to[0].email, 'zahur@physique57mumbai.com');
     const workbook = XLSX.read(Buffer.from(captured.attachments[1].content, 'base64'), { type: 'buffer' });
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets.Submissions);
     assert.equal(rows.length, 1);

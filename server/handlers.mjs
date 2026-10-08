@@ -12,7 +12,7 @@
  * Configure via server/.env (see server/.env.example):
  *   MAILTRAP_API_TOKEN   – the API token from Mailtrap (Settings → API Tokens).
  *   MAILTRAP_FROM        – address on a domain you have VERIFIED in Mailtrap.
- *   Recipient is fixed to jimmeey@physique57india.com.
+ *   Recipient is fixed to zahur@physique57mumbai.com.
  *   API endpoint is fixed to https://send.api.mailtrap.io/api/send.
  *
  * Run:  npm run build && node server/server.mjs
@@ -43,7 +43,7 @@ export const cfg = {
   apiToken: process.env.MAILTRAP_API_TOKEN || "",
   from: process.env.MAILTRAP_FROM || "",
   fromName: process.env.MAILTRAP_FROM_NAME || "Physique 57 Asset Declarations",
-  to: "jimmeey@physique57india.com",
+  to: "zahur@physique57mumbai.com",
   host: "send.api.mailtrap.io",
   path: "/api/send",
   origin: process.env.ALLOWED_ORIGIN || "*",
